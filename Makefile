@@ -15,7 +15,7 @@ RELEASE = $(filter %.whl %.tar.gz, $(wildcard dist/$(PACKAGE_NAME)-[0-9]*))
 PIP = python -m pip install --upgrade --upgrade-strategy eager
 
 .PHONY: all install test lint static develop develop-test
-.PHONY: freeze shell clean docs coverage doctest
+.PHONY: freeze shell clean docs coverage doctest win-tox
 
 all: install test coverage docs doctest
 
@@ -25,6 +25,10 @@ deps: deps-build deps-doc deps-local deps-test deps-publish
 # Python packages needed to run the tests on a Unix system
 deps-posix: deps
 	$(PIP) tox-pyenv
+
+# Python packages needed to run the tests on a Windows system
+deps-win: deps
+	$(PIP) pyenv-win
 
 # Python packages needed to build a wheel
 deps-build:
@@ -74,6 +78,19 @@ cache: setup.py | build
 # Run tests on multiple versions of Python (POSIX only)
 tox: .python-version build | cache
 	tox --installpkg $(WHEEL)
+
+# Run tests on multiple versions of Python
+win-tox: .win-tox build | cache
+	tox --installpkg $(WHEEL)
+
+.win-tox:
+	pyenv install 3.5.4
+	pyenv install 3.6.8
+	pyenv install 3.7.9
+	pyenv install 3.8.6
+	pyenv install 3.9.0
+	python scripts/windows_bat.py 3.5.4 3.6.8 3.7.9 3.8.6 3.9.0
+	touch $@
 
 # Run tests against wheel installed in virtualenv
 test: lint static .coverage

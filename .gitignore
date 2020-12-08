@@ -19,3 +19,4 @@ docs/src/
 .python-version
 .static
 .tox
+.win-tox
