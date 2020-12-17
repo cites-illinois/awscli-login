@@ -20,7 +20,7 @@ help:
 
 html: build/html
 
-doctest: build/doctest/output.txt
+doctest: .doctest
 
 $(APIDOC_BUILD_DIR): $(DOCSRCS) $(TSTS) $(SRCS)
 	$(SPHINXAPIDOC) -o $(APIDOC_BUILD_DIR) $(APIDOC_SOURCE_DIR)
@@ -28,8 +28,9 @@ $(APIDOC_BUILD_DIR): $(DOCSRCS) $(TSTS) $(SRCS)
 build/html: $(APIDOC_BUILD_DIR) $(DOCSRCS) $(TSTS) $(SRCS)
 	$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-build/doctest/output.txt: $(APIDOC_BUILD_DIR) $(DOCSRCS) $(TSTS) $(SRCS)
-	$(SPHINXBUILD) -M doctest "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+.doctest: $(APIDOC_BUILD_DIR) $(DOCSRCS) $(TSTS) $(SRCS)
+	$(SPHINXBUILD) -M doctest "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) -W
+	@touch $@
 
 # This avoids the catch-all target below
 %.rst:
@@ -45,4 +46,4 @@ build/doctest/output.txt: $(APIDOC_BUILD_DIR) $(DOCSRCS) $(TSTS) $(SRCS)
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 clean:
-	rm -rf $(APIDOC_BUILD_DIR) $(BUILDDIR)
+	rm -rf $(APIDOC_BUILD_DIR) $(BUILDDIR) .doctest

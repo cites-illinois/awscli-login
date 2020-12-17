@@ -130,10 +130,10 @@ report: $(HTML)
 $(HTML): .coverage
 	$(TOX) -- coverage html
 
-docs: $(SRCS) $(TSTS)
+docs:
 	make -C docs html
 
-doctest: $(SRCS) $(TSTS)
+doctest:
 	make -C docs doctest
 
 .PHONY: test-release release .release
