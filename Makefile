@@ -6,18 +6,15 @@ MODULE_SRCS := $(wildcard $(PKG)/*.py)
 export TSTS := $(wildcard $(TPKG)/*.py $(TPKG)/*/*.py)
 export SRCS := $(wildcard $(MODULE_SRCS) setup.py)
 HTML = htmlcov/index.html
+TOX := tox -e wheel -qq --skip-pkg-install
 TOX_ENV := .tox/wheel/pyvenv.cfg
-TOX_DEV := .tox/develop/pyvenv.cfg
-TOX_LINT := .lint
-TOX_STATIC := .static
 WHEEL = $(wildcard dist/*.whl)
-RELEASE = $(filter %.whl %.tar.gz, $(wildcard dist/$(PACKAGE_NAME)-[0-9]*))
 PIP = python -m pip install --upgrade --upgrade-strategy eager
 
 .PHONY: all install test lint static develop develop-test
 .PHONY: freeze shell clean docs coverage doctest win-tox
 
-all: install test coverage docs doctest
+all: test coverage docs doctest
 
 # Python dependencies needed for local development
 deps: deps-build deps-doc deps-local deps-test deps-publish
@@ -32,7 +29,7 @@ deps-win: deps
 
 # Python packages needed to build a wheel
 deps-build:
-	$(PIP) setuptools tox wheel
+	$(PIP) setuptools tox wheel flake8 mypy
 
 # Python packages needed to build the documentation
 deps-doc:
@@ -43,21 +40,22 @@ deps-local:
 	$(PIP) GitPython
 
 # Python packages needed to run tests
-deps-test: deps-build
+deps-test:
+	$(PIP) coverage
 
 # Python packages needed to publish a production or test release
 deps-publish:
 	$(PIP) twine
 
+# Build wheel and source tarball for upload to PyPI
+build: $(SRCS)
+	python setup.py sdist bdist_wheel
+	@touch $@
+
 # Install wheel into tox virtualenv for testing
 install: $(TOX_ENV)
 $(TOX_ENV): build | cache
 	tox -e wheel --notest --installpkg $(WHEEL) -vv
-	@touch $@
-
-# Build wheel and source tarball for upload to PyPI
-build: $(SRCS)
-	python setup.py sdist bdist_wheel
 	@touch $@
 
 # Build and save dependencies for reuse
@@ -67,6 +65,10 @@ cache: setup.py | build
 	pip wheel --wheel-dir=$@ $(WHEEL) $(WHEEL)[test] coverage
 	@touch $@
 
+# Run tests on multiple versions of Python (POSIX only)
+tox: .python-version build | cache
+	tox --installpkg $(WHEEL)
+
 .python-version:
 	pyenv install -s 3.5.10
 	pyenv install -s 3.6.12
@@ -74,10 +76,6 @@ cache: setup.py | build
 	pyenv install -s 3.8.6
 	pyenv install -s 3.9.0
 	pyenv local 3.5.10 3.6.12 3.7.9 3.8.6 3.9.0
-
-# Run tests on multiple versions of Python (POSIX only)
-tox: .python-version build | cache
-	tox --installpkg $(WHEEL)
 
 # Run tests on multiple versions of Python
 win-tox: .win-tox build | cache
@@ -94,47 +92,47 @@ win-tox: .win-tox build | cache
 
 # Run tests against wheel installed in virtualenv
 test: lint static .coverage
+
+# Run tests with coverage tool -- generates .coverage file
 .coverage: $(TOX_ENV) $(TSTS)
-	tox -e wheel --skip-pkg-install -qq
+	$(TOX)
 	@touch $@
 
 # Show coverage report
 coverage: .coverage
-	tox -e coverage --skip-pkg-install -qq
+	$(TOX) -- coverage report --omit='*/.tox/*,tests/*' --fail-under 80
 
 # Run tests directly against source code in develop mode
-develop: lint static .develop-test coverage
+develop: lint static .install .develop-test coverage
 
-.develop-test: $(TOX_DEV) $(MODULE_SRCS) $(TSTS)
-	tox -e develop --skip-pkg-install -qq
+# Install package in develop mode
+.install: setup.py
+	pip install -e .[test]
 	@touch $@
 
-# Build develop virtualenv and install module & deps so that changes
-# to source files will show up in the virtualenv without the need
-# to rebuild and install.
-$(TOX_DEV): setup.py
-	tox -e develop  --notest
+.develop-test: $(MODULE_SRCS) $(TSTS)
+	coverage run -m unittest discover -s src -v
 	@touch $@
 
-lint: $(TOX_LINT)
-$(TOX_LINT): $(SRCS) $(TSTS)
-	tox -e lint -qq
+lint: .lint
+.lint: $(SRCS) $(TSTS)
+	flake8 $?  # Test only files that have been updated
 	@touch $@
 
-static: $(TOX_STATIC)
-$(TOX_STATIC):$(SRCS) $(TSTS)
-	tox -e static -qq
+static: .static
+.static:$(SRCS) $(TSTS)
+	mypy $?  # Test only files that have been updated
 	@touch $@
 
 freeze: $(TOX_ENV)
-	tox -e wheel --skip-pkg-install -- pip freeze
+	$(TOX) -- pip freeze
 
 shell: $(TOX_ENV)
-	tox -e wheel --skip-pkg-install -qq -- bash
+	$(TOX) -- bash
 
 report: $(HTML)
 $(HTML): .coverage
-	tox -e report --skip-pkg-install -qq
+	$(TOX) -- coverage html
 
 docs: $(SRCS) $(TSTS)
 	make -C docs html
@@ -142,19 +140,21 @@ docs: $(SRCS) $(TSTS)
 doctest: $(SRCS) $(TSTS)
 	make -C docs doctest
 
-TST := Please build a test release!
-test-release: TWINE_REPOSITORY ?= testpypi
-test-release: build
-	@echo "$(RELEASE)" | python -c \
-        "import sys; \
-        [print('$(TST)') or exit(1) for l in sys.stdin if 'dev' not in l]"
-	TWINE_REPOSITORY=$(TWINE_REPOSITORY) twine upload "$(RELEASE)"
+.PHONY: test-release release .release
+RELEASE = $(filter %.whl %.tar.gz, $(wildcard dist/$(PACKAGE_NAME)-*))
 
-MSG := Please tag & build a production release!
-release: build
+test-release: MSG := Please build a test release!
+test-release: export TWINE_REPOSITORY ?= testpypi
+test-release: .release
+
+release: MSG := Please tag & build a production release!
+release: .release
+
+.release: build
 	@echo "$(RELEASE)" | python -c \
         "import sys; \
-        [print('$(MSG)') or exit(1) for l in sys.stdin if 'dev' in l]"
+        [print('$(MSG)') or exit(1) for l in sys.stdin if 'dev' in l or \
+        'invalid' in l];"
 	twine upload "$(RELEASE)"
 
 clean:

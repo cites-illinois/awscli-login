@@ -118,9 +118,9 @@ jobs:
       run: |
         python -m pip install --upgrade --upgrade-strategy eager pip
 
-    - name: Install test dependencies
+    - name: Install tox
       run: |
-        make deps-test
+        python -m pip install --upgrade --upgrade-strategy eager tox
 
     - name: Update Python wheel cache
       if: steps.tox.outputs.cache-hit != 'true' || steps.age.outputs.weekold == 'True'
