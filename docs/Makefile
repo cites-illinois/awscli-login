@@ -3,13 +3,13 @@ SRCS := $(patsubst %.py,../%.py,$(SRCS))
 TSTS := $(patsubst %.py,../%.py,$(TSTS))
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
+SPHINXOPTS    = -W
 SPHINXBUILD   = sphinx-build
 SOURCEDIR     = .
 BUILDDIR      = build
 
 SPHINXAPIDOC      = sphinx-apidoc
-APIDOC_BUILD_DIR  = src
+APIDOC_BUILD_DIR  = modules
 APIDOC_SOURCE_DIR = ../src
 
 # Put it first so that "make" without argument is like "make help".
@@ -22,8 +22,8 @@ html: build/html
 
 doctest: .doctest
 
-$(APIDOC_BUILD_DIR): $(DOCSRCS) $(TSTS) $(SRCS)
-	$(SPHINXAPIDOC) -o $(APIDOC_BUILD_DIR) $(APIDOC_SOURCE_DIR)
+ $(APIDOC_BUILD_DIR): $(DOCSRCS) $(TSTS) $(SRCS)
+	$(SPHINXAPIDOC) -o $(APIDOC_BUILD_DIR) $(APIDOC_SOURCE_DIR) --no-toc
 
 build/html: $(APIDOC_BUILD_DIR) $(DOCSRCS) $(TSTS) $(SRCS)
 	$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

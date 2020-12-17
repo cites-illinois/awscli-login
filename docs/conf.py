@@ -17,6 +17,15 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join('..', 'src')))
 
 
+# Old versions of sphinx-autodoc-typehints use a deprecated function
+# We have to use an old version due to a bug in recent versions of
+# sphinx-autodoc-typehints:
+# https://github.com/agronholm/sphinx-autodoc-typehints/issues/129
+# https://github.com/agronholm/sphinx-autodoc-typehints/issues/133
+import warnings
+warnings.filterwarnings('ignore', message = 'sphinx.util.inspect.Signature\(\) is deprecated')
+
+
 # -- Project information -----------------------------------------------------
 
 project = 'AWSCLI Login Plugin'
@@ -51,6 +60,7 @@ extensions = [
 
 napoleon_google_docstring = True  # Format this project uses!
 napoleon_numpy_docstring = False
+napoleon_use_param = True  # https://github.com/agronholm/sphinx-autodoc-typehints/issues/15
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
@@ -96,7 +106,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['.static']
+#html_static_path = ['.static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

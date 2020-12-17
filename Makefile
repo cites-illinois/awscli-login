@@ -32,8 +32,11 @@ deps-build:
 	$(PIP) setuptools tox wheel flake8 mypy
 
 # Python packages needed to build the documentation
+# sphinx-autodoc-typehints > 1.7 causes doctest to throw the following error:
+# Handler <function process_docstring at 0x10e9bd790> for event 'autodoc-process-docstring' threw an exception (exception: unexpected indent (<unknown>, line 1))
+# https://github.com/agronholm/sphinx-autodoc-typehints/issues/129
 deps-doc:
-	$(PIP) Sphinx sphinx-autodoc-typehints sphinx_rtd_theme
+	$(PIP) Sphinx sphinx-autodoc-typehints==1.7 sphinx_rtd_theme
 
 # Python packages needed to build a local production or test release
 deps-local:
