@@ -144,16 +144,18 @@ doctest: $(SRCS) $(TSTS)
 RELEASE = $(filter %.whl %.tar.gz, $(wildcard dist/$(PACKAGE_NAME)-*))
 
 test-release: MSG := Please build a test release!
+test-release: NOT := not
 test-release: export TWINE_REPOSITORY ?= testpypi
 test-release: .release
 
 release: MSG := Please tag & build a production release!
+release: NOT :=
 release: .release
 
-.release: build
+.release:
 	@echo "$(RELEASE)" | python -c \
         "import sys; \
-        [print('$(MSG)') or exit(1) for l in sys.stdin if 'dev' in l or \
+        [print('$(MSG)') or exit(1) for l in sys.stdin if 'dev' $(NOT) in l or \
         'invalid' in l];"
 	twine upload "$(RELEASE)"
 
