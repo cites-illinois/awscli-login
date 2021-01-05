@@ -82,12 +82,8 @@ win-tox: .win-tox build | cache
 	tox --installpkg $(WHEEL)
 
 .win-tox:
-	pyenv install 3.5.4
-	pyenv install 3.6.8
-	pyenv install 3.7.9
-	pyenv install 3.8.6
-	pyenv install 3.9.0
-	python scripts/windows_bat.py 3.5.4 3.6.8 3.7.9 3.8.6 3.9.0
+	pyenv install 3.5.4 3.6.8 3.7.9 3.8.7 3.9.1
+	python scripts/windows_bat.py 3.5.4 3.6.8 3.7.9 3.8.7 3.9.1
 	touch $@
 
 # Run tests against wheel installed in virtualenv
