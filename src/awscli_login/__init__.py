@@ -42,7 +42,6 @@ class Login(BasicCommand):
     SYNOPSIS = ('aws login [<Arg> ...]')
 
     ARG_TABLE = [
-        {'name': 'entity-id', 'help_text': 'Entity ID of the IdP'},
         {
             'name': 'ecp-endpoint-url',
             'help_text': 'ECP endpoint URL of the IdP'
@@ -154,7 +153,6 @@ Configuration Variables
 The following configuration variables are supported in the config
 file:
 
-* **entity_id** - The entity ID of the IDP to use for authenitication
 * **ecp_endpoint_url** - The ECP endpoint URL of the IDP to use for authn
 ''')
     SYNOPSIS = ('aws login configure')
